@@ -173,6 +173,11 @@ describe("bump run()", () => {
         body: expect.stringContaining('glueops-deploy:{"app":"api","env":"prod","tag":"v1.2.3"}'),
       }),
     );
+    // The repo and actor are clickable Markdown links (not bare text). The actor is a
+    // profile link rather than an `@mention` so deploy PRs don't notify that user.
+    const prBody = o.rest.pulls.create.mock.calls[0][0].body;
+    expect(prBody).toContain("[acme/api](https://github.com/acme/api)");
+    expect(prBody).toContain("[@dev](https://github.com/dev)");
     // The branch commit message is also conventional (subject == PR title) + carries
     // the human trigger as a git trailer since the bot authors the commit.
     expect(o.rest.repos.createOrUpdateFileContents).toHaveBeenCalledWith(
