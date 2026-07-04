@@ -21,6 +21,37 @@ describe("sanitizeTag", () => {
   });
 });
 
+// TAG-PARITY CONTRACT with GlueOps/github-actions-create-container-tags.
+// sanitizeTag MUST produce byte-identical output to that action's bash sanitization
+// (its action.yml: slashes->hyphens, [^a-zA-Z0-9_.-]->underscore, spaces->underscore,
+// lowercase). If it drifts, the tag written to values.yaml won't match the image tag
+// the build pushed, so the deploy points at an image that doesn't exist. These pairs
+// were verified byte-for-byte against create-container-tags' sanitization on
+// 2026-07-04. If this fails, sanitizeTag drifted from the contract — do NOT paper over
+// it by regenerating the expected values; re-verify against create-container-tags.
+describe("sanitizeTag parity contract (create-container-tags)", () => {
+  const GOLDEN: Array<[string, string]> = [
+    ["v1.2.3", "v1.2.3"],
+    ["v1.0", "v1.0"],
+    ["V2.0.0-RC1", "v2.0.0-rc1"],
+    ["release/foo", "release-foo"],
+    ["feature/JIRA-123", "feature-jira-123"],
+    ["feat/JIRA-123@x", "feat-jira-123_x"],
+    ["a/b/c/d", "a-b-c-d"],
+    ["hello world", "hello_world"],
+    ["weird#chars!here", "weird_chars_here"],
+    ["UPPER_Case.Tag", "upper_case.tag"],
+    ["-leading-hyphen", "-leading-hyphen"],
+    [".leading.dot", ".leading.dot"],
+    ["tag with  double  spaces", "tag_with__double__spaces"],
+    ["mixed/Slash And@Sign", "mixed-slash_and_sign"],
+    ["HEAD", "head"],
+  ];
+  it.each(GOLDEN)("sanitizeTag(%j) === %j (byte-identical to create-container-tags)", (input, expected) => {
+    expect(sanitizeTag(input)).toBe(expected);
+  });
+});
+
 describe("computeTag", () => {
   it("uses the release tag_name on release events", () => {
     expect(
