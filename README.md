@@ -65,16 +65,16 @@ Build tooling runs in Docker, so nothing needs installing locally:
 
 ```bash
 docker run --rm -v "$PWD":/app -w /app node:24-bookworm-slim \
-  sh -c "npm ci && npm run typecheck && npm run build"
+  sh -c "npm ci --ignore-scripts && npm run typecheck && npm run build"
 ```
 
 Run the tests the same way:
 
 ```bash
 docker run --rm -v "$PWD":/app -w /app node:24-bookworm-slim \
-  sh -c "npm ci && npm test"
+  sh -c "npm ci --ignore-scripts && npm test"
 ```
 
-`dist/index.js` is a committed [`ncc`](https://github.com/vercel/ncc) bundle — GitHub runs it directly from the ref (no build step at consumption). **You never hand-build it:** `build-dist.yml` rebuilds it on every PR (including Renovate dependency PRs) and commits the fresh bundle back to the branch, and self-heals `main`. `ci.yml` validates source only (typecheck + Jest + `npm audit`) and asserts `.nvmrc` matches the action runtime. Dependencies are pinned via `package-lock.json` (`npm ci`); the build toolchain (Node via `.nvmrc`, `ncc`, `typescript`) is exact-pinned; the org Renovate bot keeps them updated. Releases are cut by **release-please** (`release-please.yaml`) from Conventional Commits (App-token auth, plain `vX.Y.Z` tags); its release job attaches **build provenance** (`actions/attest-build-provenance`) to the bundle. Pure logic lives in `src/lib.ts` (unit-tested); `src/main.ts` is thin orchestration.
+`dist/index.js` is a committed [`ncc`](https://github.com/vercel/ncc) bundle — GitHub runs it directly from the ref (no build step at consumption). **You never hand-build it:** `build-dist.yml` rebuilds it on every PR (including Renovate dependency PRs) and commits the fresh bundle back to the branch, and self-heals `main`. `ci.yml` validates source only (typecheck + Jest + `npm audit`, plus the one-click page's CSP-hash guard and the cross-repo marker-contract check) and asserts `.nvmrc` matches the action runtime. Dependencies are pinned via `package-lock.json` (`npm ci`); the build toolchain (Node via `.nvmrc`, `ncc`, `typescript`) is exact-pinned; the org Renovate bot keeps them updated. Releases are cut by **release-please** (`release-please.yaml`) from Conventional Commits (App-token auth, plain `vX.Y.Z` tags); its release job attaches **build provenance** (`actions/attest-build-provenance`) to the bundle. Pure logic lives in `src/lib.ts` (unit-tested); `src/main.ts` is thin orchestration.
 
 > Note on required checks: `build-dist.yml` commits the rebuilt `dist/` with the built-in `GITHUB_TOKEN`, which by design does **not** re-trigger workflows — so on a runtime-dep PR (where `dist/` changes) that final commit has no fresh `validate` run. If you enforce required status checks, that commit can sit "waiting for status" and block the merge. On these internal repos with reviewed manual merges that's a non-issue; if you need required checks, have `build-dist` push with a GitHub App token instead of `GITHUB_TOKEN` so CI re-runs. Fork PRs can't be pushed to (read-only token), so their `git push` fails and surfaces the drift for a maintainer.

@@ -30,6 +30,6 @@ If you change the inline `<script>`, **recompute the CSP `script-src` hash**:
 ```bash
 node -e "const fs=require('fs'),c=require('crypto');const b=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];console.log('sha256-'+c.createHash('sha256').update(b,'utf8').digest('base64'))"
 ```
-and update the `script-src 'sha256-…'` value in the CSP meta.
+and update the `script-src 'sha256-…'` value in the CSP meta. CI enforces this: `ci.yml` runs `scripts/verify-csp-hash.mjs`, which fails the build if the inline script and the CSP hash drift — so a stale hash is caught before merge, not in production.
 
 To bump the permissions generation (only when the app's `default_permissions` change), edit the `PERM_GEN` constant in the script (`v1` → `v2`) — decoupled from the action's semver on purpose.
