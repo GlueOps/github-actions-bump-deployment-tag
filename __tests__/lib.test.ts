@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   sanitizeTag,
   computeTag,
@@ -114,19 +116,29 @@ describe("deploy marker round-trip", () => {
   });
 });
 
-// GOLDEN-FIXTURE CONTRACT: the marker string is a wire format shared, byte-for-byte,
-// with the cleanup action (which parses what this action writes). This literal is
-// copy-pasted into cleanup's lib.test.ts; if either side changes formatMarker's
-// output, one of these two golden tests fails and pins the drift. DO NOT "fix" this
-// by regenerating the literal from formatMarker — that would defeat the contract.
-describe("deploy marker GOLDEN contract (shared with cleanup action)", () => {
-  const GOLDEN = '<!-- glueops-deploy:{"app":"api","env":"prod","tag":"v1.2.3-rc1"} -->';
-  const META = { app: "api", env: "prod", tag: "v1.2.3-rc1" };
+// GOLDEN-FIXTURE CONTRACT (cross-repo): the marker is a wire format shared byte-for-byte
+// with the cleanup action. The golden lives in __tests__/marker.golden — an IDENTICAL
+// file committed in BOTH repos — and a CI step ("marker contract parity") diffs the two
+// copies so a one-sided change fails. Here we pin this repo's producer (formatMarker) and
+// consumer (parseMarker) to that fixture. DO NOT regenerate `marker` from formatMarker.
+describe("deploy marker GOLDEN contract (shared fixture)", () => {
+  const golden = JSON.parse(
+    readFileSync(join(__dirname, "marker.golden"), "utf8"),
+  ) as { meta: { app: string; env: string; tag: string }; marker: string };
 
   it("formatMarker emits the exact wire bytes", () => {
-    expect(formatMarker(META)).toBe(GOLDEN);
+    expect(formatMarker(golden.meta)).toBe(golden.marker);
   });
   it("parseMarker reads the exact wire bytes back", () => {
-    expect(parseMarker(GOLDEN)).toEqual(META);
+    expect(parseMarker(golden.marker)).toEqual(golden.meta);
+  });
+});
+
+// A `}` inside a JSON string value must not truncate the marker capture (the old
+// `\{.*?\}` regex stopped at the first `}`, silently breaking parsing for such values).
+describe("deploy marker tolerates braces in field values", () => {
+  it("round-trips an app/env containing '}'", () => {
+    const meta = { app: "team}a", env: "pr}od", tag: "v1" };
+    expect(parseMarker(formatMarker(meta))).toEqual(meta);
   });
 });

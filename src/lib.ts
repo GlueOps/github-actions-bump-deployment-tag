@@ -11,7 +11,10 @@ export interface DeployMeta {
   tag: string;
 }
 
-const MARKER_RE = /<!--\s*glueops-deploy:(\{.*?\})\s*-->/;
+// Capture everything up to the closing comment, not just up to the first `}` — a `}`
+// inside a JSON string value (e.g. an app/env containing one) must not truncate the
+// capture. `s` lets `.` cross newlines defensively; JSON.parse validates the payload.
+const MARKER_RE = /<!--\s*glueops-deploy:(.+?)\s*-->/s;
 
 export function formatMarker(meta: DeployMeta): string {
   return `<!-- glueops-deploy:${JSON.stringify(meta)} -->`;
@@ -22,7 +25,7 @@ export function parseMarker(body: string | null | undefined): DeployMeta | null 
   const m = body.match(MARKER_RE);
   if (!m) return null;
   try {
-    const o = JSON.parse(m[1]) as Record<string, unknown>;
+    const o = JSON.parse(m[1].trim()) as Record<string, unknown>;
     if (
       typeof o.app === "string" &&
       typeof o.env === "string" &&

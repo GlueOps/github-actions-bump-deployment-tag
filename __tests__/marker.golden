@@ -1,0 +1,4 @@
+{
+  "meta": { "app": "api", "env": "prod", "tag": "v1.2.3-rc1" },
+  "marker": "<!-- glueops-deploy:{\"app\":\"api\",\"env\":\"prod\",\"tag\":\"v1.2.3-rc1\"} -->"
+}

@@ -40,3 +40,17 @@ jobs:
       # browsers — catch that here rather than in production.
       - name: Verify one-click page CSP script hash
         run: node scripts/verify-csp-hash.mjs docs/index.html
+      # The deploy-PR marker is a wire format shared byte-for-byte with the cleanup action.
+      # Fail if this repo's golden fixture drifts from the sibling's (a one-sided format
+      # change breaks cleanup in prod). Soft-skips if the sibling file can't be fetched, so
+      # it never deadlocks the first introduction.
+      - name: Marker contract parity with cleanup action
+        run: |
+          sib=https://raw.githubusercontent.com/GlueOps/github-actions-cleanup-deployment-prs/main/__tests__/marker.golden
+          if curl -fsSL "$sib" -o /tmp/sibling.golden; then
+            diff -u __tests__/marker.golden /tmp/sibling.golden \
+              || { echo "::error::marker.golden drifted from cleanup-deployment-prs — the wire contract is broken"; exit 1; }
+            echo "marker contract matches cleanup-deployment-prs"
+          else
+            echo "::warning::could not fetch cleanup's marker.golden (not yet published?); skipping cross-repo diff"
+          fi

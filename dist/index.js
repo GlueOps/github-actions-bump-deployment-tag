@@ -55506,7 +55506,10 @@ function getOctokit(token, options, ...additionalPlugins) {
 var yaml_dist = __nccwpck_require__(8815);
 ;// CONCATENATED MODULE: ./src/lib.ts
 
-const MARKER_RE = /<!--\s*glueops-deploy:(\{.*?\})\s*-->/;
+// Capture everything up to the closing comment, not just up to the first `}` — a `}`
+// inside a JSON string value (e.g. an app/env containing one) must not truncate the
+// capture. `s` lets `.` cross newlines defensively; JSON.parse validates the payload.
+const MARKER_RE = /<!--\s*glueops-deploy:(.+?)\s*-->/s;
 function formatMarker(meta) {
     return `<!-- glueops-deploy:${JSON.stringify(meta)} -->`;
 }
@@ -55517,7 +55520,7 @@ function parseMarker(body) {
     if (!m)
         return null;
     try {
-        const o = JSON.parse(m[1]);
+        const o = JSON.parse(m[1].trim());
         if (typeof o.app === "string" &&
             typeof o.env === "string" &&
             typeof o.tag === "string") {
@@ -55592,6 +55595,11 @@ async function getFile(octokit, owner, repo, path, ref) {
     const { data } = await octokit.rest.repos.getContent({ owner, repo, path, ref });
     if (Array.isArray(data) || data.type !== "file") {
         throw new Error(`Path is not a file: ${path}`);
+    }
+    // Files >1MB return encoding:"none" + empty content; blindly base64-decoding that
+    // yields "" and would silently truncate the file on the next write. Refuse instead.
+    if (data.encoding !== "base64" || typeof data.content !== "string") {
+        throw new Error(`Cannot read '${path}': unexpected content encoding '${data.encoding ?? "none"}' (file too large?)`);
     }
     return {
         sha: data.sha,
