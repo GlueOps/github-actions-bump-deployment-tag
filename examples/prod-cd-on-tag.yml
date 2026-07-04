@@ -45,7 +45,7 @@ jobs:
     if: needs.tag-branch-check.outputs.is_default_branch == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: GlueOps/github-actions-bump-deployment-tag@v0.0.0 # x-release-please-version
+      - uses: GlueOps/github-actions-bump-deployment-tag@v1.0.0 # x-release-please-version
         with:
           ENV: prod
           CREATE_PR: true
