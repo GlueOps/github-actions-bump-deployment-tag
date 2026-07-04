@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-TBZgyJe2Ln+8//UrymZOcOXJYI7tdqOoZ77vBECPA5k='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; form-action https://github.com; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-zPsRjSBF3DhcTGgTa9ikgiojaH8VcoP6ppGK0cLln+w='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; form-action https://github.com; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Set up GlueOps Deployment</title>
 <style>
@@ -135,6 +135,20 @@
     if (e.persisted) { clearSecret(); location.replace(location.pathname); }
   });
 
+  // ---- Copy buttons: delegated so a click on the button OR its inner icon works; one
+  // path for every field. Registered BEFORE the code-path early return below, so it is
+  // also active on the credentials view (copyText/flash are hoisted; defined lower). ----
+  var COPY_ICO = '<svg class="ico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>';
+  var CHECK_ICO = '<svg class="ico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>';
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("[data-copy]") : null;
+    if (!btn) { return; }
+    var el = $(btn.getAttribute("data-copy"));
+    if (!el) { return; }
+    var val = (el.tagName === "TEXTAREA" || el.tagName === "INPUT") ? el.value : el.textContent;
+    copyText(val, btn);
+  });
+
   var params = new URLSearchParams(location.search);
   var code = params.get("code");
   var returnedState = params.get("state");
@@ -249,21 +263,6 @@
     $("installLink").href = base + "/installations/new";
 
   }
-
-  // ---- Copy buttons: delegated so a click on the button OR its inner icon works;
-  // one path for every field (App ID + names copy textContent, the key copies the
-  // textarea value). ----
-  var COPY_ICO = '<svg class="ico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>';
-  var CHECK_ICO = '<svg class="ico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>';
-
-  document.addEventListener("click", function (e) {
-    var btn = e.target.closest ? e.target.closest("[data-copy]") : null;
-    if (!btn) { return; }
-    var el = $(btn.getAttribute("data-copy"));
-    if (!el) { return; }
-    var val = (el.tagName === "TEXTAREA" || el.tagName === "INPUT") ? el.value : el.textContent;
-    copyText(val, btn);
-  });
 
   // Swap the icon to a check on success (keeps any text label), then restore.
   function flash(btn, ok) {
