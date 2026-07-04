@@ -35,3 +35,8 @@ jobs:
       - run: npm test
       # Fail the build on known-high-severity vulns in shipped (production) deps.
       - run: npm audit --omit=dev --audit-level=high
+      # The one-click install page pins its inline <script> via a CSP sha256 hash.
+      # Editing the script without recomputing the hash silently breaks the page in
+      # browsers — catch that here rather than in production.
+      - name: Verify one-click page CSP script hash
+        run: node scripts/verify-csp-hash.mjs docs/index.html
