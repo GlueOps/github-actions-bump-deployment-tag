@@ -1,0 +1,48 @@
+name: Build dist
+# Rebuilds the committed ncc bundle so humans never hand-run `npm run build`.
+# On same-repo PRs (incl. Renovate/Dependabot) it commits the fresh dist/ back to
+# the PR branch; on pushes to main it self-heals. Fork PRs get a read-only token,
+# so the final `git push` fails and surfaces the drift instead of merging it.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-dist-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.head_ref || github.ref_name }} # PR branch, so we can push back
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts   # block install-hook malware (page is served from this repo's /docs)
+      - run: npm run build
+      - name: Commit rebuilt dist if changed
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain dist)" ]; then
+            echo "dist is already up to date."
+            exit 0
+          fi
+          echo "dist changed; committing the rebuilt bundle."
+          git config user.name "github-actions[bot]"
+          # This email MUST match an entry in the org Renovate `gitIgnoredAuthors`
+          # (renovatebot-configs/base.json) — Renovate does an exact-string match to
+          # decide a branch is automation-only and keep rebasing it. Do NOT "fix" this
+          # to the canonical 41898282+ form or Renovate will treat rebuilt-dist commits
+          # as human edits and stop rebasing the branch.
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist
+          git commit -m "chore: rebuild dist [skip ci]"
+          git push

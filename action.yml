@@ -1,0 +1,46 @@
+name: "Bump Deployment Tag"
+author: "GlueOps"
+description: "Update an application's image tag in the deployment-configurations repo (via PR or direct push) using a short-lived GitHub App token."
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+
+inputs:
+  ENV:
+    description: "Target environment. Must match the folder under apps/<app>/envs/ in the deployment-configurations repo."
+    required: true
+  CREATE_PR:
+    description: "If 'true', open a PR in the deployment-configurations repo. If 'false', commit directly to its default branch."
+    required: true
+  DEPLOYMENT_CONFIGS_APP_NAME:
+    description: "Override the app folder name under apps/ when it does not match this repo's name."
+    required: false
+    default: ''
+  DEPLOYMENT_CONFIGS_REPO:
+    description: "Name of the deployment-configurations repo in this organization."
+    required: false
+    default: 'deployment-configurations'
+  DEPLOYMENT_CONFIGS_REPO_DEFAULT_BRANCH:
+    description: "Default branch of the deployment-configurations repo."
+    required: false
+    default: 'main'
+  app-id:
+    description: "GitHub App ID of the GlueOps Deployment App."
+    required: true
+  private-key:
+    description: "PEM private key of the GlueOps Deployment App."
+    required: true
+
+outputs:
+  tag:
+    description: "The image tag that was applied."
+  action:
+    description: "What happened: 'created-pr', 'updated-pr', 'committed', or 'noop'."
+  pr-number:
+    description: "The pull request number (only when a PR was created/updated)."
+  pr-url:
+    description: "The pull request URL (only when a PR was created/updated)."
+
+runs:
+  using: "node24"
+  main: "dist/index.js"
