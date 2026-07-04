@@ -55655,8 +55655,10 @@ async function run(deps) {
     const path = `apps/${appName}/envs/${env}/values.yaml`;
     // Conventional-commit subject (type=chore, scope=deploy) so the deploy PR passes
     // org commit-message linting; identical to the PR title so squash-merges stay valid.
-    // The bot authors the commit, so the human trigger is preserved as a git trailer.
-    const message = `chore(deploy): ${sourceRepo} [${env}] -> ${tag}\n\nTriggered-by: @${context.actor}`;
+    // Uses `appName` (not the source repo) so monorepo deploys — many apps sharing one
+    // source repo + tag — get distinct, disambiguated subjects. The bot authors the
+    // commit, so the human trigger is preserved as a git trailer.
+    const message = `chore(deploy): ${appName} [${env}] -> ${tag}\n\nTriggered-by: @${context.actor}`;
     core.setOutput("tag", tag);
     core.info(`Target ${owner}/${configRepo} ${path} -> image.tag=${tag}`);
     const octokit = await deps.makeOctokit({ appId, privateKey, owner, repo: configRepo });
@@ -55717,7 +55719,7 @@ async function run(deps) {
             repo: configRepo,
             base: defaultBranch,
             head: branch,
-            title: `chore(deploy): ${sourceRepo} [${env}] -> ${tag}`,
+            title: `chore(deploy): ${appName} [${env}] -> ${tag}`,
             body,
         });
         core.setOutput("action", "created-pr");

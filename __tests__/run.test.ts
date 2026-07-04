@@ -180,6 +180,29 @@ describe("bump run()", () => {
     expect(core.setOutput).toHaveBeenCalledWith("pr-url", "https://x/42");
   });
 
+  // Monorepo: the app-name override must drive the title + commit subject (not the
+  // shared source repo), so two apps from one repo get distinct, disambiguated PRs.
+  it("PR path: an app-name override disambiguates the title + commit subject", async () => {
+    const o = makeOctokit();
+    o.rest.repos.getContent.mockResolvedValue(contentResponse("image:\n  tag: old\n"));
+    o.rest.pulls.create.mockResolvedValue({ data: { number: 7, html_url: "https://x/7" } });
+    const { deps } = makeDeps(
+      { ...base, CREATE_PR: "true", DEPLOYMENT_CONFIGS_APP_NAME: "billing" },
+      o,
+    );
+    await run(deps);
+    expect(o.rest.pulls.create).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "chore(deploy): billing [prod] -> v1.2.3" }),
+    );
+    expect(o.rest.repos.createOrUpdateFileContents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        // path uses the app folder, subject uses the app name — both "billing", not "api"
+        path: "apps/billing/envs/prod/values.yaml",
+        message: "chore(deploy): billing [prod] -> v1.2.3\n\nTriggered-by: @dev",
+      }),
+    );
+  });
+
   it("PR path noop: base already at the target tag → no PR created", async () => {
     const o = makeOctokit();
     o.rest.repos.getContent.mockResolvedValue(contentResponse("image:\n  tag: v1.2.3\n"));
