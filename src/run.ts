@@ -4,7 +4,10 @@ import { computeTag, setImageTag, formatMarker } from "./lib";
 interface FileData {
   type: string;
   sha: string;
-  content: string;
+  // Optional to match the real getContent union: symlink/dir/submodule variants (and
+  // files >1MB, which come back with encoding:"none") carry no usable base64 content.
+  content?: string;
+  encoding?: string;
 }
 
 /** Narrow structural view of the Octokit surface run() uses. Keeps the injected
@@ -113,6 +116,13 @@ async function getFile(
   const { data } = await octokit.rest.repos.getContent({ owner, repo, path, ref });
   if (Array.isArray(data) || data.type !== "file") {
     throw new Error(`Path is not a file: ${path}`);
+  }
+  // Files >1MB return encoding:"none" + empty content; blindly base64-decoding that
+  // yields "" and would silently truncate the file on the next write. Refuse instead.
+  if (data.encoding !== "base64" || typeof data.content !== "string") {
+    throw new Error(
+      `Cannot read '${path}': unexpected content encoding '${data.encoding ?? "none"}' (file too large?)`,
+    );
   }
   return {
     sha: data.sha,

@@ -32,3 +32,11 @@ export async function scopedOctokit(
   setSecret(token); // ensure the derived token is masked in logs
   return new Octokit({ auth: token });
 }
+
+// Compile-time contract: the real Octokit must stay assignable to the narrow BumpOctokit
+// view that run.ts + the test fakes depend on. If an @octokit/rest upgrade breaks this,
+// reconcile BumpOctokit rather than widening the `as unknown as` cast in main.ts.
+// Type-only — erased at build; costs nothing at runtime.
+import type { BumpOctokit } from "./run";
+type AssertAssignable<Sub extends Sup, Sup> = Sub;
+type _BumpOctokitContract = AssertAssignable<Octokit, BumpOctokit>;

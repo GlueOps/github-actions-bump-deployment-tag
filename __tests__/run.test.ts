@@ -7,7 +7,12 @@ const httpError = (
 ) => Object.assign(new Error(message), { status, message, errors });
 
 const contentResponse = (yaml: string, sha = "sha1") => ({
-  data: { type: "file", sha, content: Buffer.from(yaml, "utf8").toString("base64") },
+  data: {
+    type: "file",
+    sha,
+    encoding: "base64",
+    content: Buffer.from(yaml, "utf8").toString("base64"),
+  },
 });
 
 function makeOctokit() {
@@ -282,6 +287,17 @@ describe("bump run()", () => {
     o.rest.repos.getContent.mockResolvedValue({ data: [] });
     const { deps } = makeDeps({ ...base, CREATE_PR: "false" }, o);
     await expect(run(deps)).rejects.toThrow(/not a file/);
+  });
+
+  it("refuses a >1MB file (encoding:'none', empty content) instead of truncating it", async () => {
+    const o = makeOctokit();
+    // GitHub returns encoding:"none" + empty content for files over 1MB — decoding that
+    // would overwrite the real file with a stub. run() must throw, not silently corrupt.
+    o.rest.repos.getContent.mockResolvedValue({
+      data: { type: "file", sha: "s", encoding: "none", content: "" },
+    });
+    const { deps } = makeDeps({ ...base, CREATE_PR: "false" }, o);
+    await expect(run(deps)).rejects.toThrow(/unexpected content encoding/);
   });
 
   it("rethrows a non-HTTP error (no numeric status) from createRef", async () => {
