@@ -32,7 +32,7 @@ Replaces a classic `repo`-scoped user PAT stored org-wide. The App token is **sc
 ## Usage
 
 ```yaml
-- uses: GlueOps/github-actions-bump-deployment-tag@v0.0.0 # x-release-please-version
+- uses: GlueOps/github-actions-bump-deployment-tag@v1.0.0 # x-release-please-version
   with:
     ENV: prod
     CREATE_PR: true
