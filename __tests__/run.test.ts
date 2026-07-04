@@ -162,7 +162,17 @@ describe("bump run()", () => {
       expect.objectContaining({
         base: "main",
         head: "api/update-prod-image-tag-v1.2.3",
+        // Conventional-commit title (org linter requires it; must equal the commit
+        // subject so squash-merges stay valid).
+        title: "chore(deploy): api [prod] -> v1.2.3",
         body: expect.stringContaining('glueops-deploy:{"app":"api","env":"prod","tag":"v1.2.3"}'),
+      }),
+    );
+    // The branch commit message is also conventional (subject == PR title) + carries
+    // the human trigger as a git trailer since the bot authors the commit.
+    expect(o.rest.repos.createOrUpdateFileContents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "chore(deploy): api [prod] -> v1.2.3\n\nTriggered-by: @dev",
       }),
     );
     expect(core.setOutput).toHaveBeenCalledWith("action", "created-pr");

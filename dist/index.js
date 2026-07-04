@@ -55653,7 +55653,10 @@ async function run(deps) {
         releaseTag: context.payload.release?.tag_name,
     });
     const path = `apps/${appName}/envs/${env}/values.yaml`;
-    const message = `${sourceRepo}: updating ${env} tag to ${tag}, by ${context.actor}`;
+    // Conventional-commit subject (type=chore, scope=deploy) so the deploy PR passes
+    // org commit-message linting; identical to the PR title so squash-merges stay valid.
+    // The bot authors the commit, so the human trigger is preserved as a git trailer.
+    const message = `chore(deploy): ${sourceRepo} [${env}] -> ${tag}\n\nTriggered-by: @${context.actor}`;
     core.setOutput("tag", tag);
     core.info(`Target ${owner}/${configRepo} ${path} -> image.tag=${tag}`);
     const octokit = await deps.makeOctokit({ appId, privateKey, owner, repo: configRepo });
@@ -55714,7 +55717,7 @@ async function run(deps) {
             repo: configRepo,
             base: defaultBranch,
             head: branch,
-            title: `${sourceRepo} [${env}] > ${tag}`,
+            title: `chore(deploy): ${sourceRepo} [${env}] -> ${tag}`,
             body,
         });
         core.setOutput("action", "created-pr");
