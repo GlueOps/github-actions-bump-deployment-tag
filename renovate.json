@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "description": "Keep the CI build Node aligned with the action runtime (action.yml `using: node24`). GitHub Actions node runtimes are a discrete GitHub-published set (node16/20/24…), not the Node release cadence, so bump .nvmrc major by hand together with action.yml. A CI assertion enforces the pair agree; this rule just suppresses the noisy .nvmrc major PR.",
+      "matchManagers": ["nvm"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}

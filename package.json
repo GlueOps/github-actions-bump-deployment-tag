@@ -1,0 +1,34 @@
+{
+  "name": "github-actions-bump-deployment-tag",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Update an app's image tag in the GlueOps deployment-configurations repo using a scoped GitHub App token.",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "ncc build src/main.ts -o dist --source-map --license licenses.txt",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --coverage"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
+    "@octokit/auth-app": "^8.2.0",
+    "@octokit/rest": "^22.0.1",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/jest": "30.0.0",
+    "@types/node": "24.13.0",
+    "@vercel/ncc": "0.44.1",
+    "jest": "30.4.2",
+    "ts-jest": "29.4.11",
+    "typescript": "6.0.3"
+  },
+  "overrides": {
+    "undici": "8.5.0"
+  }
+}

@@ -1,0 +1,33 @@
+# Place this in an APP SOURCE repo at .github/workflows/prod-cd.yml
+# Fires when a GitHub Release is created; bumps prod image tags for two apps in order.
+name: prod CD
+
+on:
+  release:
+    types: [created]
+
+permissions: {}   # cross-repo writes use the App token; GITHUB_TOKEN needs nothing here
+
+jobs:
+  update-prod-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GlueOps/github-actions-bump-deployment-tag@v0.0.0 # x-release-please-version
+        with:
+          ENV: prod
+          CREATE_PR: true
+          DEPLOYMENT_CONFIGS_APP_NAME: api
+          app-id: ${{ vars.GLUEOPS_DEPLOYMENT_APP_ID }}
+          private-key: ${{ secrets.GLUEOPS_DEPLOYMENT_APP_PRIVATE_KEY }}
+
+  update-prod-ui:
+    needs: update-prod-api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GlueOps/github-actions-bump-deployment-tag@v0.0.0 # x-release-please-version
+        with:
+          ENV: prod
+          CREATE_PR: true
+          DEPLOYMENT_CONFIGS_APP_NAME: ui
+          app-id: ${{ vars.GLUEOPS_DEPLOYMENT_APP_ID }}
+          private-key: ${{ secrets.GLUEOPS_DEPLOYMENT_APP_PRIVATE_KEY }}
