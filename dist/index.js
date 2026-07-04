@@ -55774,11 +55774,11 @@ async function run(deps) {
     }
 }
 
-;// CONCATENATED MODULE: ./node_modules/@octokit/rest/node_modules/@octokit/plugin-request-log/dist-src/version.js
+;// CONCATENATED MODULE: ./node_modules/@octokit/plugin-request-log/dist-src/version.js
 const plugin_request_log_dist_src_version_VERSION = "6.0.0";
 
 
-;// CONCATENATED MODULE: ./node_modules/@octokit/rest/node_modules/@octokit/plugin-request-log/dist-src/index.js
+;// CONCATENATED MODULE: ./node_modules/@octokit/plugin-request-log/dist-src/index.js
 
 function requestLog(octokit) {
   octokit.hook.wrap("request", (request, options) => {
