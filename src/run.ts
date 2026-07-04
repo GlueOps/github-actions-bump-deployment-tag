@@ -264,7 +264,12 @@ export async function run(deps: BumpDeps): Promise<void> {
   });
 
   const marker = formatMarker({ app: appName, env, tag });
-  const body = `PR created via CD workflow in ${owner}/${sourceRepo} by ${context.actor}.\n\n${marker}`;
+  // Render the repo and actor as Markdown links so they're clickable in the PR body.
+  // The actor is a profile link rather than a bare `@mention` on purpose — a mention
+  // would notify that user on every deploy PR; a link goes to the profile without the noise.
+  const repoLink = `[${owner}/${sourceRepo}](https://github.com/${owner}/${sourceRepo})`;
+  const actorLink = `[@${context.actor}](https://github.com/${context.actor})`;
+  const body = `PR created via CD workflow in ${repoLink} by ${actorLink}.\n\n${marker}`;
 
   try {
     const { data: pr } = await octokit.rest.pulls.create({
