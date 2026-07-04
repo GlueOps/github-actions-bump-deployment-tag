@@ -82,7 +82,8 @@
     <h1>Create your <span class="accent">GlueOps</span> Deployment app</h1>
 
     <section id="start" hidden>
-      <p>This creates a dedicated GitHub App in your organization — the credential GlueOps uses to ship your applications. To release a new version, it opens a pull request in your <code>deployment-configurations</code> repo that updates the running image tag. You must be an <strong>owner</strong> of the organization to create it.</p>
+      <p>This is the recommended way to set up continuous delivery with GlueOps: a dedicated GitHub App that lets GlueOps's GitHub Actions open a pull request in your <code>deployment-configurations</code> repo to update the running image tag. It's optional — if you'd rather update that repo with your own tooling, you can skip it. You must be an <strong>owner</strong> of the organization to create the app.</p>
+      <p class="hint">This app is only the write credential those actions use. For how GlueOps reads that repo to deploy, see <a href="https://github.com/glueops-dev" target="_blank" rel="noopener">github.com/glueops-dev</a>.</p>
       <form id="createForm" class="card">
         <label for="org">Organization login <span class="hint">(the name in your GitHub URL, not the display name)</span></label>
         <input id="org" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="acme" required>
