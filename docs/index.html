@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-OtuR5z+hAHEmRwgJcHgYK/vIdtwUgvUnhP2Wa2E2SzE='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; form-action https://github.com; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-/zfV9mCFShDWS8TJ3r1IKZXMACw9DGecAMW0XYF+av8='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; form-action https://github.com; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Set up GlueOps Deployment</title>
 <style>
@@ -65,7 +65,7 @@
           <p class="warn">Shown once. Copy it now &mdash; if you reload or leave this page, it is gone for good.</p>
           <button type="button" id="revealBtn">Reveal private key</button>
           <textarea id="pem" class="mono" rows="8" readonly hidden aria-label="Private key"></textarea>
-          <div><button type="button" id="copyPem" hidden>Copy private key</button></div>
+          <div><button type="button" id="copyPem">Copy private key</button></div>
           <a id="secretLink" class="btn" target="_top" rel="noopener">Open &ldquo;New organization secret&rdquo;</a>
         </div>
         <div class="step">
@@ -222,9 +222,9 @@
 
     $("revealBtn").addEventListener("click", function () {
       pemEl.hidden = false;
-      $("copyPem").hidden = false;
       this.hidden = true;
     });
+    // Copy works without revealing the key (the value lives in a closure, not the DOM).
     $("copyPem").addEventListener("click", function () { copyText(pem, this); });
   }
 
@@ -237,17 +237,38 @@
     }
   });
 
-  function copyText(str, btn) {
-    function done() { var old = btn.textContent; btn.textContent = "Copied"; setTimeout(function () { btn.textContent = old; }, 1200); }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(str).then(done, function () { fallbackCopy(str); done(); });
-    } else { fallbackCopy(str); done(); }
+  // Temporarily replace the button label, then restore it (works on repeated clicks).
+  function flash(btn, msg) {
+    if (!btn.dataset.orig) { btn.dataset.orig = btn.textContent; }
+    btn.textContent = msg;
+    setTimeout(function () { btn.textContent = btn.dataset.orig; }, 1500);
   }
+  // execCommand fallback for browsers/contexts without the async Clipboard API.
+  // Returns whether the copy actually succeeded.
   function fallbackCopy(str) {
     var ta = document.createElement("textarea");
-    ta.value = str; document.body.appendChild(ta); ta.select();
-    try { document.execCommand("copy"); } catch (e) {}
+    ta.value = str;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { ta.setSelectionRange(0, str.length); } catch (e) { /* ignore */ }
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
     document.body.removeChild(ta);
+    return ok;
+  }
+  // Copy `str`, reporting honestly: only show "Copied" when it actually worked.
+  function copyText(str, btn) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(str).then(
+        function () { flash(btn, "Copied ✓"); },
+        function () { flash(btn, fallbackCopy(str) ? "Copied ✓" : "Copy failed — select manually"); },
+      );
+    } else {
+      flash(btn, fallbackCopy(str) ? "Copied ✓" : "Copy failed — select manually");
+    }
   }
 })();
   </script>
