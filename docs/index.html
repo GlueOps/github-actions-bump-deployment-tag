@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-/zfV9mCFShDWS8TJ3r1IKZXMACw9DGecAMW0XYF+av8='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; form-action https://github.com; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-TQuPQBFPyyzJ+Du+mkPk3/SumLlCIOOJJZ/ZXtds56M='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; form-action https://github.com; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Set up GlueOps Deployment</title>
 <style>
@@ -55,16 +55,15 @@
       <div id="creds" hidden>
         <div class="step">
           <h2>1. Add the App ID (organization variable)</h2>
-          <p>Variable name: <code>GLUEOPS_DEPLOYMENT_APP_ID</code></p>
+          <p>Variable name: <code id="varName" class="mono">GLUEOPS_DEPLOYMENT_APP_ID</code> <button type="button" data-copy="varName">Copy</button></p>
           <div class="field"><code id="appId" class="mono"></code> <button type="button" data-copy="appId">Copy</button></div>
           <a id="varLink" class="btn" target="_top" rel="noopener">Open &ldquo;New organization variable&rdquo;</a>
         </div>
         <div class="step">
           <h2>2. Add the private key (organization secret)</h2>
-          <p>Secret name: <code>GLUEOPS_DEPLOYMENT_APP_PRIVATE_KEY</code></p>
-          <p class="warn">Shown once. Copy it now &mdash; if you reload or leave this page, it is gone for good.</p>
-          <button type="button" id="revealBtn">Reveal private key</button>
-          <textarea id="pem" class="mono" rows="8" readonly hidden aria-label="Private key"></textarea>
+          <p>Secret name: <code id="secretName" class="mono">GLUEOPS_DEPLOYMENT_APP_PRIVATE_KEY</code> <button type="button" data-copy="secretName">Copy</button></p>
+          <p class="warn">Shown once. This is a sensitive secret &mdash; copy it now and treat it like a password. If you reload or leave this page, it is gone for good.</p>
+          <textarea id="pem" class="mono" rows="8" readonly aria-label="Private key"></textarea>
           <div><button type="button" id="copyPem">Copy private key</button></div>
           <a id="secretLink" class="btn" target="_top" rel="noopener">Open &ldquo;New organization secret&rdquo;</a>
         </div>
@@ -220,11 +219,7 @@
     var base = htmlUrl || (slug ? GH + "/apps/" + encodeURIComponent(slug) : GH);
     $("installLink").href = base + "/installations/new";
 
-    $("revealBtn").addEventListener("click", function () {
-      pemEl.hidden = false;
-      this.hidden = true;
-    });
-    // Copy works without revealing the key (the value lives in a closure, not the DOM).
+    // The key is shown by default (see the warning); copy also reads from the closure.
     $("copyPem").addEventListener("click", function () { copyText(pem, this); });
   }
 
