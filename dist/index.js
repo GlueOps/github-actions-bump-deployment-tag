@@ -56782,26 +56782,17 @@ async function githubAppJwt({
  *
  * @copyright 2026 Igor Savin <kibertoad@gmail.com>
  * @license MIT
- * @version 3.7.3
+ * @version 3.7.0
  */
-/**
- * Validates the shared cache constructor parameters.
- * Both values must be non-negative integers.
- *
- * @param {number} max
- * @param {number} ttlInMsecs
- */
-function validateCacheParams(max, ttlInMsecs) {
-  if (typeof max !== 'number' || !Number.isInteger(max) || max < 0) {
-    throw new Error('Invalid max value')
-  }
-
-  if (typeof ttlInMsecs !== 'number' || !Number.isInteger(ttlInMsecs) || ttlInMsecs < 0) {
-    throw new Error('Invalid ttl value')
-  }
-}class FifoMap {
+class FifoMap {
   constructor(max = 1000, ttlInMsecs = 0) {
-    validateCacheParams(max, ttlInMsecs);
+    if (isNaN(max) || max < 0) {
+      throw new Error('Invalid max value')
+    }
+
+    if (isNaN(ttlInMsecs) || ttlInMsecs < 0) {
+      throw new Error('Invalid ttl value')
+    }
 
     this.first = null;
     this.items = new Map();
@@ -56815,15 +56806,15 @@ function validateCacheParams(max, ttlInMsecs) {
   }
 
   clear() {
-    this.items.clear();
+    this.items = new Map();
     this.first = null;
     this.last = null;
   }
 
   delete(key) {
-    const deletedItem = this.items.get(key);
+    if (this.items.has(key)) {
+      const deletedItem = this.items.get(key);
 
-    if (deletedItem !== undefined) {
       this.items.delete(key);
 
       if (deletedItem.prev !== null) {
@@ -56867,17 +56858,15 @@ function validateCacheParams(max, ttlInMsecs) {
   }
 
   expiresAt(key) {
-    const item = this.items.get(key);
-
-    if (item !== undefined) {
-      return item.expiry
+    if (this.items.has(key)) {
+      return this.items.get(key).expiry
     }
   }
 
   get(key) {
-    const item = this.items.get(key);
+    if (this.items.has(key)) {
+      const item = this.items.get(key);
 
-    if (item !== undefined) {
       if (this.ttl > 0 && item.expiry <= Date.now()) {
         this.delete(key);
         return
@@ -56888,10 +56877,10 @@ function validateCacheParams(max, ttlInMsecs) {
   }
 
   getMany(keys) {
-    const result = new Array(keys.length);
+    const result = [];
 
     for (var i = 0; i < keys.length; i++) {
-      result[i] = this.get(keys[i]);
+      result.push(this.get(keys[i]));
     }
 
     return result
@@ -56903,17 +56892,17 @@ function validateCacheParams(max, ttlInMsecs) {
 
   set(key, value) {
     // Replace existing item
-    const existing = this.items.get(key);
+    if (this.items.has(key)) {
+      const item = this.items.get(key);
+      item.value = value;
 
-    if (existing !== undefined) {
-      existing.value = value;
-      existing.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
+      item.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
 
       return
     }
 
     // Add new item
-    if (this.max > 0 && this.size >= this.max) {
+    if (this.max > 0 && this.size === this.max) {
       this.evict();
     }
 
@@ -56936,7 +56925,13 @@ function validateCacheParams(max, ttlInMsecs) {
   }
 }class FifoObject {
   constructor(max = 1000, ttlInMsecs = 0) {
-    validateCacheParams(max, ttlInMsecs);
+    if (isNaN(max) || max < 0) {
+      throw new Error('Invalid max value')
+    }
+
+    if (isNaN(ttlInMsecs) || ttlInMsecs < 0) {
+      throw new Error('Invalid ttl value')
+    }
 
     this.first = null;
     this.items = Object.create(null);
@@ -56954,9 +56949,9 @@ function validateCacheParams(max, ttlInMsecs) {
   }
 
   delete(key) {
-    const deletedItem = this.items[key];
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const deletedItem = this.items[key];
 
-    if (deletedItem !== undefined) {
       delete this.items[key];
       this.size--;
 
@@ -57001,17 +56996,15 @@ function validateCacheParams(max, ttlInMsecs) {
   }
 
   expiresAt(key) {
-    const item = this.items[key];
-
-    if (item !== undefined) {
-      return item.expiry
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      return this.items[key].expiry
     }
   }
 
   get(key) {
-    const item = this.items[key];
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item = this.items[key];
 
-    if (item !== undefined) {
       if (this.ttl > 0 && item.expiry <= Date.now()) {
         this.delete(key);
         return
@@ -57022,10 +57015,10 @@ function validateCacheParams(max, ttlInMsecs) {
   }
 
   getMany(keys) {
-    const result = new Array(keys.length);
+    const result = [];
 
     for (var i = 0; i < keys.length; i++) {
-      result[i] = this.get(keys[i]);
+      result.push(this.get(keys[i]));
     }
 
     return result
@@ -57037,17 +57030,17 @@ function validateCacheParams(max, ttlInMsecs) {
 
   set(key, value) {
     // Replace existing item
-    const existing = this.items[key];
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item = this.items[key];
+      item.value = value;
 
-    if (existing !== undefined) {
-      existing.value = value;
-      existing.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
+      item.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
 
       return
     }
 
     // Add new item
-    if (this.max > 0 && this.size >= this.max) {
+    if (this.max > 0 && this.size === this.max) {
       this.evict();
     }
 
@@ -57068,24 +57061,6 @@ function validateCacheParams(max, ttlInMsecs) {
 
     this.last = item;
   }
-}/**
- * Creates a zeroed statistics record for a single collection window.
- *
- * @returns {object}
- */
-function createEmptyStatisticsRecord() {
-  return {
-    cacheSize: 0,
-    hits: 0,
-    falsyHits: 0,
-    emptyHits: 0,
-    misses: 0,
-    expirations: 0,
-    evictions: 0,
-    invalidateOne: 0,
-    invalidateAll: 0,
-    sets: 0,
-  }
 }class HitStatisticsRecord {
   constructor() {
     this.records = {};
@@ -57093,17 +57068,35 @@ function createEmptyStatisticsRecord() {
 
   initForCache(cacheId, currentTimeStamp) {
     this.records[cacheId] = {
-      [currentTimeStamp]: createEmptyStatisticsRecord(),
+      [currentTimeStamp]: {
+        cacheSize: 0,
+        hits: 0,
+        falsyHits: 0,
+        emptyHits: 0,
+        misses: 0,
+        expirations: 0,
+        evictions: 0,
+        invalidateOne: 0,
+        invalidateAll: 0,
+        sets: 0,
+      },
     };
   }
 
   resetForCache(cacheId) {
-    if (!this.records[cacheId]) {
-      return
-    }
-
     for (let key of Object.keys(this.records[cacheId])) {
-      this.records[cacheId][key] = createEmptyStatisticsRecord();
+      this.records[cacheId][key] = {
+        cacheSize: 0,
+        hits: 0,
+        falsyHits: 0,
+        emptyHits: 0,
+        misses: 0,
+        expirations: 0,
+        evictions: 0,
+        invalidateOne: 0,
+        invalidateAll: 0,
+        sets: 0,
+      };
     }
   }
 
@@ -57112,7 +57105,13 @@ function createEmptyStatisticsRecord() {
   }
 }class LruMap {
   constructor(max = 1000, ttlInMsecs = 0) {
-    validateCacheParams(max, ttlInMsecs);
+    if (isNaN(max) || max < 0) {
+      throw new Error('Invalid max value')
+    }
+
+    if (isNaN(ttlInMsecs) || ttlInMsecs < 0) {
+      throw new Error('Invalid ttl value')
+    }
 
     this.first = null;
     this.items = new Map();
@@ -57146,7 +57145,6 @@ function createEmptyStatisticsRecord() {
       prev.next = next;
     }
 
-    /* v8 ignore next 3 -- next is always non-null here: the early return above guarantees item !== this.last in a well-formed list */
     if (next !== null) {
       next.prev = prev;
     }
@@ -57155,15 +57153,15 @@ function createEmptyStatisticsRecord() {
   }
 
   clear() {
-    this.items.clear();
+    this.items = new Map();
     this.first = null;
     this.last = null;
   }
 
   delete(key) {
-    const item = this.items.get(key);
+    if (this.items.has(key)) {
+      const item = this.items.get(key);
 
-    if (item !== undefined) {
       this.items.delete(key);
 
       if (item.prev !== null) {
@@ -57207,17 +57205,15 @@ function createEmptyStatisticsRecord() {
   }
 
   expiresAt(key) {
-    const item = this.items.get(key);
-
-    if (item !== undefined) {
-      return item.expiry
+    if (this.items.has(key)) {
+      return this.items.get(key).expiry
     }
   }
 
   get(key) {
-    const item = this.items.get(key);
+    if (this.items.has(key)) {
+      const item = this.items.get(key);
 
-    if (item !== undefined) {
       // Item has already expired
       if (this.ttl > 0 && item.expiry <= Date.now()) {
         this.delete(key);
@@ -57231,10 +57227,10 @@ function createEmptyStatisticsRecord() {
   }
 
   getMany(keys) {
-    const result = new Array(keys.length);
+    const result = [];
 
     for (var i = 0; i < keys.length; i++) {
-      result[i] = this.get(keys[i]);
+      result.push(this.get(keys[i]));
     }
 
     return result
@@ -57246,18 +57242,21 @@ function createEmptyStatisticsRecord() {
 
   set(key, value) {
     // Replace existing item
-    const existing = this.items.get(key);
+    if (this.items.has(key)) {
+      const item = this.items.get(key);
+      item.value = value;
 
-    if (existing !== undefined) {
-      existing.value = value;
-      existing.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
-      this.bumpLru(existing);
+      item.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
+
+      if (this.last !== item) {
+        this.bumpLru(item);
+      }
 
       return
     }
 
     // Add new item
-    if (this.max > 0 && this.size >= this.max) {
+    if (this.max > 0 && this.size === this.max) {
       this.evict();
     }
 
@@ -57280,7 +57279,13 @@ function createEmptyStatisticsRecord() {
   }
 }class LruObject {
   constructor(max = 1000, ttlInMsecs = 0) {
-    validateCacheParams(max, ttlInMsecs);
+    if (isNaN(max) || max < 0) {
+      throw new Error('Invalid max value')
+    }
+
+    if (isNaN(ttlInMsecs) || ttlInMsecs < 0) {
+      throw new Error('Invalid ttl value')
+    }
 
     this.first = null;
     this.items = Object.create(null);
@@ -57311,7 +57316,6 @@ function createEmptyStatisticsRecord() {
       prev.next = next;
     }
 
-    /* v8 ignore next 3 -- next is always non-null here: the early return above guarantees item !== this.last in a well-formed list */
     if (next !== null) {
       next.prev = prev;
     }
@@ -57327,9 +57331,9 @@ function createEmptyStatisticsRecord() {
   }
 
   delete(key) {
-    const item = this.items[key];
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item = this.items[key];
 
-    if (item !== undefined) {
       delete this.items[key];
       this.size--;
 
@@ -57374,17 +57378,15 @@ function createEmptyStatisticsRecord() {
   }
 
   expiresAt(key) {
-    const item = this.items[key];
-
-    if (item !== undefined) {
-      return item.expiry
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      return this.items[key].expiry
     }
   }
 
   get(key) {
-    const item = this.items[key];
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item = this.items[key];
 
-    if (item !== undefined) {
       // Item has already expired
       if (this.ttl > 0 && item.expiry <= Date.now()) {
         this.delete(key);
@@ -57398,10 +57400,10 @@ function createEmptyStatisticsRecord() {
   }
 
   getMany(keys) {
-    const result = new Array(keys.length);
+    const result = [];
 
     for (var i = 0; i < keys.length; i++) {
-      result[i] = this.get(keys[i]);
+      result.push(this.get(keys[i]));
     }
 
     return result
@@ -57413,18 +57415,21 @@ function createEmptyStatisticsRecord() {
 
   set(key, value) {
     // Replace existing item
-    const existing = this.items[key];
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item = this.items[key];
+      item.value = value;
 
-    if (existing !== undefined) {
-      existing.value = value;
-      existing.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
-      this.bumpLru(existing);
+      item.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
+
+      if (this.last !== item) {
+        this.bumpLru(item);
+      }
 
       return
     }
 
     // Add new item
-    if (this.max > 0 && this.size >= this.max) {
+    if (this.max > 0 && this.size === this.max) {
       this.evict();
     }
 
@@ -57462,24 +57467,32 @@ function getTimestamp(date) {
 
     this.collectionStart = new Date();
     this.currentTimeStamp = getTimestamp(this.collectionStart);
-    this.archiveAfter = this.collectionStart.getTime() + this.statisticTtlInHours * 3_600_000;
 
     this.records = globalStatisticsRecord || new HitStatisticsRecord();
     this.records.initForCache(this.cacheId, this.currentTimeStamp);
   }
 
   get currentRecord() {
-    const cacheRecords = this.records.records[this.cacheId];
     // safety net
-    /* c8 ignore next 3 */
-    if (!cacheRecords[this.currentTimeStamp]) {
-      cacheRecords[this.currentTimeStamp] = createEmptyStatisticsRecord();
+    /* c8 ignore next 14 */
+    if (!this.records.records[this.cacheId][this.currentTimeStamp]) {
+      this.records.records[this.cacheId][this.currentTimeStamp] = {
+        cacheSize: 0,
+        hits: 0,
+        falsyHits: 0,
+        emptyHits: 0,
+        misses: 0,
+        expirations: 0,
+        evictions: 0,
+        sets: 0,
+        invalidateOne: 0,
+        invalidateAll: 0,
+      };
     }
 
-    return cacheRecords[this.currentTimeStamp]
+    return this.records.records[this.cacheId][this.currentTimeStamp]
   }
 
-  /* v8 ignore next 3 -- kept for compatibility, no longer used internally */
   hoursPassed() {
     return (Date.now() - this.collectionStart) / 1000 / 60 / 60
   }
@@ -57538,19 +57551,15 @@ function getTimestamp(date) {
   }
 
   archiveIfNeeded() {
-    if (Date.now() >= this.archiveAfter) {
+    if (this.hoursPassed() >= this.statisticTtlInHours) {
       this.collectionStart = new Date();
       this.currentTimeStamp = getTimestamp(this.collectionStart);
-      this.archiveAfter = this.collectionStart.getTime() + this.statisticTtlInHours * 3_600_000;
       this.records.initForCache(this.cacheId, this.currentTimeStamp);
     }
   }
 }class LruObjectHitStatistics extends LruObject {
   constructor(max, ttlInMsecs, cacheId, globalStatisticsRecord, statisticTtlInHours) {
-    // Pass through as-is: the base constructor applies the 1000/0 defaults for
-    // omitted (undefined) values and validates everything else, so explicit 0
-    // stays unlimited and null/NaN are rejected the same way as the base class.
-    super(max, ttlInMsecs);
+    super(max || 1000, ttlInMsecs || 0);
 
     if (!cacheId) {
       throw new Error('Cache id is mandatory')
@@ -57574,19 +57583,15 @@ function getTimestamp(date) {
   }
 
   evict() {
-    const hadItems = this.size > 0;
     super.evict();
-    if (hadItems) {
-      this.hitStatistics.addEviction();
-    }
+    this.hitStatistics.addEviction();
     this.hitStatistics.setCacheSize(this.size);
   }
 
   delete(key, isExpiration = false) {
-    const existed = this.items[key] !== undefined;
     super.delete(key);
 
-    if (existed && !isExpiration) {
+    if (!isExpiration) {
       this.hitStatistics.addInvalidateOne();
     }
     this.hitStatistics.setCacheSize(this.size);
@@ -57600,9 +57605,9 @@ function getTimestamp(date) {
   }
 
   get(key) {
-    const item = this.items[key];
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item = this.items[key];
 
-    if (item !== undefined) {
       // Item has already expired
       if (this.ttl > 0 && item.expiry <= Date.now()) {
         this.delete(key, true);
@@ -57614,10 +57619,9 @@ function getTimestamp(date) {
       this.bumpLru(item);
       if (!item.value) {
         this.hitStatistics.addFalsyHit();
-        // Empty values are a subset of falsy values
-        if (item.value === undefined || item.value === null || item.value === '') {
-          this.hitStatistics.addEmptyHit();
-        }
+      }
+      if (item.value === undefined || item.value === null || item.value === '') {
+        this.hitStatistics.addEmptyHit();
       }
       this.hitStatistics.addHit();
       return item.value
