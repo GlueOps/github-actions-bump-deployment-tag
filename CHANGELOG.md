@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/GlueOps/github-actions-bump-deployment-tag/compare/v1.0.0...v1.0.1) (2026-07-31)
+
+
+### Miscellaneous Chores
+
+* add Apache-2.0 LICENSE ([#21](https://github.com/GlueOps/github-actions-bump-deployment-tag/issues/21)) ([a4806c7](https://github.com/GlueOps/github-actions-bump-deployment-tag/commit/a4806c79d7a510814a23311c471337420047e675))
+
 ## 1.0.0 (2026-07-04)
 
 
