@@ -52067,7 +52067,7 @@ class RequestError extends Error {
 
 
 // pkg/dist-src/version.js
-var dist_bundle_VERSION = "10.0.11";
+var dist_bundle_VERSION = "10.0.13";
 
 // pkg/dist-src/defaults.js
 var defaults_default = {
@@ -52205,7 +52205,10 @@ async function getResponseData(response) {
     } catch (err) {
       return text;
     }
-  } else if (mimetype.type.startsWith("text/") || mimetype.parameters.charset?.toLowerCase() === "utf-8") {
+  } else if (mimetype.type.startsWith("text/") || // `application/octet-stream` is the canonical "arbitrary binary" type
+  // (RFC 2046) and must never be decoded as text, even when the response
+  // carries a (misleading) `charset=utf-8` parameter — see #751.
+  mimetype.parameters.charset?.toLowerCase() === "utf-8" && mimetype.type !== "application/octet-stream") {
     return response.text().catch(noop);
   } else {
     return response.arrayBuffer().catch(
@@ -56132,6 +56135,7 @@ async function deleteAuthorization(options) {
   );
 }
 
+/* v8 ignore next: we always pass a custom request in tests -- @preserve */
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/auth-oauth-device/dist-bundle/index.js
 // pkg/dist-src/index.js
@@ -56270,6 +56274,7 @@ function createOAuthDeviceAuth(options) {
   });
 }
 
+/* v8 ignore next 2 -- @preserve */
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/auth-oauth-user/dist-bundle/index.js
 // pkg/dist-src/index.js
@@ -56471,6 +56476,8 @@ function createOAuthUserAuth({
 }
 createOAuthUserAuth.VERSION = auth_oauth_user_dist_bundle_VERSION;
 
+/* v8 ignore if -- @preserve */
+/* v8 ignore next -- @preserve */
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/auth-oauth-app/dist-bundle/index.js
 // pkg/dist-src/index.js
@@ -56564,6 +56571,7 @@ function createOAuthAppAuth(options) {
   });
 }
 
+/* v8 ignore next -- @preserve */
 
 ;// CONCATENATED MODULE: ./node_modules/universal-github-app-jwt/lib/utils.js
 // we don't @ts-check here because it chokes on atob and btoa which are available in all modern JS runtime environments
@@ -58062,7 +58070,7 @@ async function sendRequestWithRetries(state, request, options, createdAt, retrie
 }
 
 // pkg/dist-src/version.js
-var dist_node_VERSION = "8.2.0";
+var dist_node_VERSION = "8.3.0";
 
 // pkg/dist-src/index.js
 
@@ -58113,6 +58121,10 @@ function createAppAuth(options) {
   });
 }
 
+/* v8 ignore next - permissions are optional per OpenAPI spec, but we think that is incorrect -- @preserve */
+/* v8 ignore next - repositorySelection are optional per OpenAPI spec, but we think that is incorrect -- @preserve */
+/* v8 ignore start - due to skipped tests, see https://github.com/octokit/auth-app.js/pull/580 -- @preserve */
+/* v8 ignore end -- @preserve */
 
 ;// CONCATENATED MODULE: ./src/octokit.ts
 
